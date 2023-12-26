@@ -862,6 +862,22 @@ class BaseMergeLatestBallotsView(BaseNewBallotSetView):
         kwargs['vetos'] = self.vetos
         kwargs['filled'] = True
         return kwargs
+    
+    def get_form(self):
+        form = super().get_form()
+        for error in self.errors:
+            msg, t, side, pos = error.args
+            if t == 'speaker':
+                field = form._fieldname_speaker(side, pos)
+            elif t == 'ghost':
+                field = form._fieldname_ghost(side, pos)
+            elif t == 'winners':
+                field = form._fieldname_declared_winner()
+            elif t == 'scores':
+                field = form._fieldname_score(side, pos)
+            form.cleaned_data = {}
+            form.add_error(field, ValidationError(msg))
+        return form
 
     def populate_objects(self, prefill=True):
         super().populate_objects()
@@ -875,8 +891,8 @@ class BaseMergeLatestBallotsView(BaseNewBallotSetView):
 
         # Handle result conflicts
         self.result = DebateResult(self.ballotsub, tournament=self.tournament)
-        errors = self.result.populate_from_merge(*[b.result for b in bses])
-        for t, errors in groupby(errors, key=lambda e: e.args[1]):
+        self.errors = self.result.populate_from_merge(*[b.result for b in bses])
+        for t, errors in groupby(self.errors, key=lambda e: e.args[1]):
             if t == 'speaker':
                 msg = _("The speaking order in the ballots is inconsistent. Affected speakers are blanked. Make sure the speaker order and scores are correct.")
             elif t == 'ghost':

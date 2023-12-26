@@ -465,8 +465,6 @@ class DebateResultByAdjudicator(BaseDebateResult):
 
             if key == 'speaker':
                 self.set_speaker(side, pos, None)
-                for adj in self.debateadjs:
-                    self.set_score(adj, side, pos, None)
 
         return errors
 
@@ -706,7 +704,7 @@ class DebateResultWithScoresMixin:
                 self.set_speaker(side, pos, result.get_speaker(side, pos))
             elif result.get_speaker(side, pos) != cur_speaker:
                 errors.append(ResultError("Inconsistent speaker order", "speaker", side, pos))
-                continue  # Don't care about setting ghost/score if can't attribute to the correct speaker
+                # continue  # Don't care about setting ghost/score if can't attribute to the correct speaker
 
             if not self.get_ghost(side, pos) and result.get_ghost(side, pos):
                 self.set_ghost(side, pos, result.get_ghost(side, pos))
@@ -931,15 +929,17 @@ class ConsensusDebateResult(BaseDebateResult):
         for error in errors:
             key, side, pos = error.args[1:]
 
-            if key == 'winners':
+            if key == 'winners': 
                 self.set_winners(set())
 
             # Clear ghosts for speaker order problems too
-            if key in ('ghost', 'speaker', 'scores'):
+            if key == 'ghost':
                 self.set_ghost(side, pos, False)
 
-            if key in ('speaker', 'scores'):
+            if key == 'speaker':
                 self.set_speaker(side, pos, None)
+
+            if key == 'scores':
                 self.set_score(side, pos, None)
 
         return errors
